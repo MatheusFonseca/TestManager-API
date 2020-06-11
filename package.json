@@ -1,0 +1,23 @@
+{
+  "name": "gerenciamento-avaliacoes",
+  "version": "1.0.0",
+  "description": "Aprendendo Nodejs",
+  "main": "index.js",
+  "scripts": {
+    "start": "cross-env NODE_ENV=producao node server",
+    "dev": "nodemon server"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^2.0.4"
+  },
+  "dependencies": {
+    "colors": "^1.4.0",
+    "cross-env": "^7.0.2",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "mongoose": "^5.9.18",
+    "morgan": "^1.10.0"
+  }
+}
