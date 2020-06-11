@@ -4,26 +4,26 @@ const morgan = require('morgan');
 const colors = require('colors');
 const connectDB = require('./config/db');
 
-// Carregar variaveis de ambiente
+// Loading environment variables
 dotenv.config({ path: './config/config.env' });
 
-// Conectando ao Banco de dados
+// Connecting to database
 connectDB();
 
-// Arquivos de rotas
-const alunos = require('./routes/alunos');
+// Route files
+const users = require('./routes/users');
 
 const app = express();
 
-// Logger se estiver rodando em modo desenvolvimento
-if (process.env.NODE_ENV === 'desenvolvimento') {
+// Logger if in development mode
+if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
 // Body Parser
 app.use(express.json());
 
-// Montando rotas
+// Mount routes
 app.use('/api/v1/alunos', alunos);
 
 const PORT = process.env.PORT || 5000;
@@ -35,9 +35,9 @@ const server = app.listen(
   )
 );
 
-// Capturando com unhandled promise rejections
+// Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
   console.log(`Error: ${err.message}`.red);
-  // Fechar servidor e sair com falha
+  // Close server and exit with failure
   server.close(() => process.exit(1));
 });
