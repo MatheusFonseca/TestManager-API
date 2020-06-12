@@ -12,6 +12,7 @@ connectDB();
 
 // Route files
 const users = require('./routes/users');
+const courses = require('./routes/courses');
 
 const app = express();
 
@@ -24,14 +25,14 @@ if (process.env.NODE_ENV === 'development') {
 app.use(express.json());
 
 // Mount routes
-app.use('/api/v1/alunos', alunos);
+app.use('/api/v1/users', users);
+app.use('/api/v1/courses', courses);
 
 const PORT = process.env.PORT || 5000;
 const server = app.listen(
   PORT,
   console.log(
-    `Servidor rodando em modo ${process.env.NODE_ENV} na porta ${PORT}`.blue
-      .bold
+    `Server running on ${process.env.NODE_ENV} mode on port ${PORT}`.blue.bold
   )
 );
 
