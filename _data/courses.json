@@ -1,0 +1,27 @@
+[
+  {
+    "name": "Banco de dados I",
+    "courseCode": "BD1",
+    "courseLoad": 48
+  },
+  {
+    "name": "Banco de dados II",
+    "courseCode": "BD2",
+    "courseLoad": 64
+  },
+  {
+    "name": "Inteligência artificial",
+    "courseCode": "AI",
+    "courseLoad": 64
+  },
+  {
+    "name": "Sistemas distribuídos",
+    "courseCode": "SD",
+    "courseLoad": 48
+  },
+  {
+    "name": "Engenharia de software I",
+    "courseCode": "ES1",
+    "courseLoad": 80
+  }
+]

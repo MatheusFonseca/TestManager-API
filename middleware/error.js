@@ -12,11 +12,7 @@ const errorHandler = (err, req, res, next) => {
     error = new ErrorResponse(400, `Not correctly formatted id: ${err.value}`);
   } else if (err.code === 11000) {
     // Duplicate key
-    error = new ErrorResponse(
-      400,
-      `Duplicate field value entered: ${Object.keys(err.keyValue)}`
-    );
-    console.log(Object.keys(err.keyValue));
+    error = new ErrorResponse(400, `Duplicate field value entered`);
   } else if (err.name === 'ValidationError') {
     const message = Object.values(err.errors).map((val) => val.message);
     error = new ErrorResponse(400, message);
