@@ -14,7 +14,10 @@ const CourseSchema = new mongoose.Schema({
     trim: true,
     maxlength: [10, 'Code can not be longer than 10 characters'],
   },
-  courseLoad: Number,
+  courseLoad: {
+    type: Number,
+    required: [true, 'Please add a course load'],
+  },
   createdAt: {
     type: Date,
     default: Date.now,
