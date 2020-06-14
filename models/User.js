@@ -2,39 +2,45 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const UserSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, 'Please add a name'],
-    trim: true,
+const UserSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: [true, 'Please add a name'],
+      trim: true,
+    },
+    email: {
+      type: String,
+      unique: true,
+      required: [true, 'Please add an email'],
+      match: [
+        /^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
+        'Please add a valid email',
+      ], // regex from https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address
+    },
+    role: {
+      type: String,
+      enum: ['student', 'teacher'],
+      default: 'student',
+    },
+    password: {
+      type: String,
+      required: [true, 'Please add a password'],
+      minlength: 6,
+      select: false,
+    },
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
-  email: {
-    type: String,
-    unique: true,
-    required: [true, 'Please add an email'],
-    match: [
-      /^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
-      'Please add a valid email',
-    ], // regex from https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address
-  },
-  role: {
-    type: String,
-    enum: ['student', 'teacher'],
-    default: 'student',
-  },
-  password: {
-    type: String,
-    required: [true, 'Please add a password'],
-    minlength: 6,
-    select: false,
-  },
-  resetPasswordToken: String,
-  resetPasswordExpire: Date,
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+  {
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
+);
 
 // Encrypt password using bcrypt
 UserSchema.pre('save', async function (next) {
@@ -56,5 +62,13 @@ UserSchema.methods.getSignedJwtToken = function () {
 UserSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
+
+// Reverse populate with virtuals
+UserSchema.virtual('classrooms', {
+  ref: 'Classroom',
+  localField: '_id',
+  foreignField: 'students',
+  justOne: false,
+});
 
 module.exports = mongoose.model('User', UserSchema);

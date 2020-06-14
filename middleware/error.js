@@ -7,9 +7,9 @@ const errorHandler = (err, req, res, next) => {
   // Log for dev
   console.log(err.stack.red);
 
-  // Not correctly formatted id
   if (err.name === 'CastError') {
-    error = new ErrorResponse(400, `Not correctly formatted id: ${err.value}`);
+    // Not correctly formatted id
+    error = new ErrorResponse(400, `Not corretly formatted id: ${err.value}`);
   } else if (err.code === 11000) {
     // Duplicate key
     error = new ErrorResponse(400, `Duplicate field value entered`);

@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Matheus Fonseca",
+    "email": "matheus@email.com",
+    "password": "123456",
+    "role": "student"
+  },
+  {
+    "name": "João Silva",
+    "email": "joao@email.com",
+    "password": "123456",
+    "role": "student"
+  },
+  {
+    "name": "Suellen Pereira",
+    "email": "suellen@email.com",
+    "password": "123456",
+    "role": "teacher"
+  },
+  {
+    "name": "Letícia Mota",
+    "email": "leticia@email.com",
+    "password": "123456",
+    "role": "student"
+  },
+  {
+    "name": "Anderson Morais",
+    "email": "anderson@email.com",
+    "password": "123456",
+    "role": "student"
+  }
+]
