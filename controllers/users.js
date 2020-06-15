@@ -19,7 +19,7 @@ exports.getUser = asyncHandler(async (req, res, next) => {
     populate: { path: 'course', select: 'name' },
   });
 
-  // correctly formatted id but doesnt found
+  // correctly formatted id but not found
   if (!user) {
     return next(
       new ErrorResponse(404, `User not found with id of: ${req.params.id}`)
@@ -47,7 +47,7 @@ exports.updateUser = asyncHandler(async (req, res, next) => {
     runValidators: true,
   });
 
-  // correctly formatted id but doesnt found
+  // correctly formatted id but not found
   if (!user) {
     return next(
       new ErrorResponse(404, `User not found with id of: ${req.params.id}`)
@@ -61,7 +61,16 @@ exports.updateUser = asyncHandler(async (req, res, next) => {
 // @route   DELETE /api/v1/users/:id
 // @access  Private/Admin
 exports.deleteUser = asyncHandler(async (req, res, next) => {
-  await User.findByIdAndDelete(req.params.id);
+  const user = await User.findById(req.params.id);
+
+  // correctly formatted id but not found
+  if (!user) {
+    return next(
+      new ErrorResponse(404, `User not found with id of: ${req.params.id}`)
+    );
+  }
+
+  user.remove();
 
   res.status(200).json({ success: true, data: {} });
 });

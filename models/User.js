@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -62,6 +63,27 @@ UserSchema.methods.getSignedJwtToken = function () {
 UserSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
+
+// Generate and hash password token
+UserSchema.methods.getResetPasswordToken = function () {
+  const resetToken = crypto.randomBytes(20).toString('hex');
+  this.resetPasswordToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+
+  // Set expire
+  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+
+  return resetToken;
+};
+
+// Cascade delete classroom when teacher is deleted
+UserSchema.pre('remove', async function (next) {
+  console.log(`Removing classrooms of teacher: ${this._id}`);
+  await this.model('Classroom').deleteMany({ teacher: this._id });
+  next();
+});
 
 // Reverse populate with virtuals
 UserSchema.virtual('classrooms', {

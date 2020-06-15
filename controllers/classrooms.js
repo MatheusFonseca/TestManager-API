@@ -20,7 +20,7 @@ exports.getClassroom = asyncHandler(async (req, res, next) => {
     .populate({ path: 'students', select: 'name' })
     .populate('teacher')
     .populate('course');
-  // correctly formatted id but doesnt found
+  // correctly formatted id but not found
   if (!classroom) {
     return next(
       new ErrorResponse(404, `Classroom not found with id of: ${req.params.id}`)
@@ -33,56 +33,11 @@ exports.getClassroom = asyncHandler(async (req, res, next) => {
 // @route   POST /api/v1/classrooms
 // @access  Private/Admin
 exports.addClassroom = asyncHandler(async (req, res, next) => {
-  //
-  // Checking if teacher exist and have 'teacher' role
-  const teacher = await User.findById(req.body.teacher);
-  if (!teacher) {
-    return next(
-      new ErrorResponse(
-        400,
-        `Teacher not found with id of: ${req.body.teacher}`
-      )
-    );
-  } else if (teacher.role !== 'teacher') {
-    return next(
-      new ErrorResponse(
-        400,
-        "Classroom require a teacher with role of 'teacher'"
-      )
-    );
-  }
-
-  // Checking if classroom capacity is ok
-  const capacity = req.body.capacity || Classroom.getDefaultCapacity();
-  if (req.body.students.length > capacity) {
-    return next(
-      new ErrorResponse(400, `Limit of ${capacity} students. (capacity)`)
-    );
-  }
-
-  // Removing duplicates
-  req.body.students = [...new Set(req.body.students)];
-
-  // Checking if students exist and have 'student' role
-  for (value of req.body.students) {
-    const student = await User.findById(value);
-    if (student.role !== 'student') {
-      return next(
-        new ErrorResponse(
-          400,
-          `Students need to have 'student' role, id ${value} does not.`
-        )
-      );
-    }
-  }
-
-  // Checking if course exists
-  const course = await Course.findById(req.body.course);
-  if (!course) {
-    return next(
-      new ErrorResponse(400, `Course not found with id of: ${req.body.teacher}`)
-    );
-  }
+  // Running validators
+  await validateTeacher(next, req.body.teacher);
+  validateCapacity(next, req.body.capacity, req.body.students.length);
+  await validateCourse(next, req.body.course);
+  await validateStudents(next, req.body.students, req.body.course);
 
   const classroom = await Classroom.create(req.body);
 
@@ -93,74 +48,38 @@ exports.addClassroom = asyncHandler(async (req, res, next) => {
 // @route   PUT /api/v1/classrooms/:id
 // @access  Private/Admin
 exports.updateClassroom = asyncHandler(async (req, res, next) => {
-  const classroom = await Classroom.findById(req.params.id);
-
-  // Checking if teacher exist and have 'teacher' role
+  const id = req.params.id;
+  const classroom = await Classroom.findById(id);
+  if (!classroom) {
+    return next(
+      new ErrorResponse(404, `Classroom not found with id of: ${id}`)
+    );
+  }
+  // Running validators
   if (req.body.teacher) {
-    const teacher = await User.findById(req.body.teacher);
-    if (!teacher) {
-      return next(
-        new ErrorResponse(
-          400,
-          `Teacher not found with id of: ${req.body.teacher}`
-        )
-      );
-    } else if (teacher.role !== 'teacher') {
-      return next(
-        new ErrorResponse(
-          400,
-          "Classroom require a teacher with role of 'teacher'"
-        )
-      );
-    }
+    await validateTeacher(next, req.body.teacher);
   }
-
-  if (req.body.students) {
-    // Checking if classroom capacity is ok
-    const capacity = req.body.capacity || classroom.capacity;
-    if (req.body.students.length > capacity) {
-      return next(
-        new ErrorResponse(400, `Limit of ${capacity} students. (capacity)`)
-      );
-    }
-
-    // Removing duplicates
-    req.body.students = [...new Set(req.body.students)];
-
-    // Checking if students exist and have 'student' role
-    for (value of req.body.students) {
-      const student = await User.findById(value);
-      if (student.role !== 'student') {
-        return next(
-          new ErrorResponse(
-            400,
-            `Students need to have 'student' role, id ${value} does not.`
-          )
-        );
-      }
-    }
+  if (req.body.capacity) {
+    validateCapacity(
+      next,
+      req.body.capacity,
+      req.body.students.length,
+      classroom.capacity
+    );
   }
-
   if (req.body.course) {
-    // Checking if course exists
-    const course = await Course.findById(req.body.course);
-    if (!course) {
-      return next(
-        new ErrorResponse(
-          400,
-          `Course not found with id of: ${req.body.teacher}`
-        )
-      );
-    }
+    await validateCourse(next, req.body.course);
+  }
+  if (req.body.students) {
+    await validateStudents(next, req.body.students, req.body.course);
   }
 
-  console.log(req.body);
   await classroom.updateOne(req.body, {
     new: true,
     runValidators: true,
   });
 
-  res.status(201).json({ success: true, data: classroom });
+  res.status(200).json({ success: true, data: classroom });
 });
 
 // @desc    Delete Classroom
@@ -169,7 +88,7 @@ exports.updateClassroom = asyncHandler(async (req, res, next) => {
 exports.deleteClassroom = asyncHandler(async (req, res, next) => {
   const classroom = await Classroom.findByIdAndDelete(req.params.id);
 
-  // correctly formatted id but doesnt found
+  // correctly formatted id but not found
   if (!classroom) {
     return next(
       new ErrorResponse(404, `Classroom not found with id of: ${req.params.id}`)
@@ -178,3 +97,80 @@ exports.deleteClassroom = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({ success: true, data: {} });
 });
+
+// Helpers
+const validateTeacher = async (next, id) => {
+  // Checking if teacher exist and have 'teacher' role
+  const teacher = await User.findById(id);
+  if (!teacher) {
+    throw next(new ErrorResponse(404, `Teacher not found with id of: ${id}`));
+  } else if (teacher.role !== 'teacher') {
+    throw next(
+      new ErrorResponse(
+        400,
+        "Classroom require a teacher with role of 'teacher'"
+      )
+    );
+  }
+};
+
+const validateCapacity = async (
+  next,
+  newCapacity,
+  studentsCount,
+  oldCapacity
+) => {
+  // Checking if classroom capacity is ok
+  const capacity = newCapacity || oldCapacity || Classroom.getDefaultCapacity();
+  if (studentsCount > capacity) {
+    throw next(
+      new ErrorResponse(400, `Limit of ${capacity} students. (capacity)`)
+    );
+  }
+};
+
+const validateStudents = async (next, students, course) => {
+  // Removing duplicates
+  students = [...new Set(students)];
+
+  // Checking if students exist...
+  for (value of students) {
+    const student = await User.findOne({
+      _id: value,
+    }).populate('classrooms');
+    if (!student) {
+      throw next(
+        new ErrorResponse(404, `Student not found with id of ${value}.`)
+      );
+    }
+    // ... and have 'student' role
+    if (student.role !== 'student') {
+      throw next(
+        new ErrorResponse(
+          400,
+          `Students need to have 'student' role, id ${value} does not.`
+        )
+      );
+    }
+    // ...and are not already registered in another class of the same course
+    const classrooms = student.classrooms.map((classroom) =>
+      classroom.course.toString()
+    );
+    if (classrooms.includes(course)) {
+      throw next(
+        new ErrorResponse(
+          400,
+          `Student ${value} is already registered in another class of the same course`
+        )
+      );
+    }
+  }
+};
+
+const validateCourse = async (next, id) => {
+  // Checking if course exists
+  const course = await Course.findById(id);
+  if (!course) {
+    throw next(new ErrorResponse(404, `Course not found with id of: ${id}`));
+  }
+};

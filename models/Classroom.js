@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const User = require('./User');
 
-const defaultCapacity = 40;
+const defaultCapacity = 20;
 
 const ClassroomSchema = new mongoose.Schema({
   name: {
@@ -25,12 +25,17 @@ const ClassroomSchema = new mongoose.Schema({
     required: true,
   },
   students: [{ type: mongoose.Schema.ObjectId, ref: 'User' }],
+  //validate: [arrayLimit, '{PATH} exceeds the limit of 10']
   createdAt: {
     type: Date,
     default: Date.now,
   },
 });
 
+// Ensure, at db level, that an user is registered at max 1 classroom of each course
+ClassroomSchema.index({ course: 1, students: 1 }, { unique: true });
+
+// Get default capacity of classroom
 ClassroomSchema.statics.getDefaultCapacity = () => defaultCapacity;
 
 module.exports = mongoose.model('Classroom', ClassroomSchema);
