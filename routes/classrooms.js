@@ -17,9 +17,9 @@ router
   .route('/')
   .get(
     advancedResults(Classroom, [
-      { path: 'teacher' },
+      { path: 'teacher', select: 'name' },
       { path: 'students', select: 'name' },
-      { path: 'course' },
+      { path: 'course', select: 'name' },
     ]),
     protect,
     authorize('admin'),

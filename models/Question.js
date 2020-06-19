@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const arrayLimit = (value) => {
+const answersValidator = (value) => {
   let texts = value.map((v) => v.text);
   texts = [...new Set(texts)];
 
@@ -22,36 +22,50 @@ const answer = new mongoose.Schema({
   correct: { type: Boolean, required: [true, "Please add 'correct' field"] },
 });
 
-const QuestionSchema = new mongoose.Schema({
-  text: {
-    type: String,
-    required: [true, "Please add the question's main text"],
-    trim: true,
+const QuestionSchema = new mongoose.Schema(
+  {
+    text: {
+      type: String,
+      required: [true, "Please add the question's main text"],
+      trim: true,
+    },
+    course: {
+      type: mongoose.Schema.ObjectId,
+      ref: 'Course',
+      required: [true, 'Please add a course'],
+    },
+    photo: {
+      type: String,
+      default: 'no-photo.jpg',
+    },
+    answers: {
+      type: [answer],
+      required: true,
+      validate: [
+        answersValidator,
+        '{PATH} must be 5 different ones and exactly 1 true',
+      ],
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
-  course: {
-    type: mongoose.Schema.ObjectId,
-    ref: 'Course',
-    required: [true, 'Please add a course'],
-  },
-  photo: {
-    type: String,
-    default: 'no-photo.jpg',
-  },
-  answers: {
-    type: [answer],
-    required: true,
-    validate: [
-      arrayLimit,
-      '{PATH} must be 5 different ones and exactly 1 true',
-    ],
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+  {
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
+);
 
 // 2 questions might have the same main text if they are of different courses
 QuestionSchema.index({ course: 1, text: 1 }, { unique: true });
+
+// Reverse populate with virtuals
+QuestionSchema.virtual('tests', {
+  ref: 'Test',
+  localField: '_id',
+  foreignField: 'questions',
+  justOne: false,
+});
 
 module.exports = mongoose.model('Question', QuestionSchema);

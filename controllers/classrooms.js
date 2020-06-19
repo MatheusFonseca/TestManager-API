@@ -8,7 +8,6 @@ const ErrorResponse = require('../utils/errorResponse');
 // @route   GET /api/v1/classrooms
 // @access  Private/Admin
 exports.getClassrooms = asyncHandler(async (req, res, next) => {
-  const classrooms = await Classroom.find();
   res.status(200).json(res.advancedResults);
 });
 
@@ -35,7 +34,9 @@ exports.getClassroom = asyncHandler(async (req, res, next) => {
 exports.addClassroom = asyncHandler(async (req, res, next) => {
   // Running validators
   await validateTeacher(next, req.body.teacher);
-  validateCapacity(next, req.body.capacity, req.body.students.length);
+  if (req.body.capacity !== undefined || req.body.students) {
+    validateCapacity(next, req.body.capacity, req.body.students.length);
+  }
   await validateCourse(next, req.body.course);
   await validateStudents(next, req.body.students, req.body.course);
 
@@ -48,24 +49,24 @@ exports.addClassroom = asyncHandler(async (req, res, next) => {
 // @route   PUT /api/v1/classrooms/:id
 // @access  Private/Admin
 exports.updateClassroom = asyncHandler(async (req, res, next) => {
-  const id = req.params.id;
-  const classroom = await Classroom.findById(id);
+  let classroom = await Classroom.findById(req.params.id);
   if (!classroom) {
     return next(
-      new ErrorResponse(404, `Classroom not found with id of: ${id}`)
+      new ErrorResponse(404, `Classroom not found with id of: ${req.params.id}`)
     );
   }
   // Running validators
   if (req.body.teacher) {
     await validateTeacher(next, req.body.teacher);
   }
-  if (req.body.capacity) {
-    validateCapacity(
-      next,
-      req.body.capacity,
-      req.body.students.length,
-      classroom.capacity
-    );
+  let students = req.body.students;
+  if (req.body.capacity !== undefined || students) {
+    if (students) {
+      students = req.body.students.length;
+    } else {
+      students = classroom.students.length;
+    }
+    validateCapacity(next, req.body.capacity, students, classroom.capacity);
   }
   if (req.body.course) {
     await validateCourse(next, req.body.course);
@@ -74,7 +75,7 @@ exports.updateClassroom = asyncHandler(async (req, res, next) => {
     await validateStudents(next, req.body.students, req.body.course);
   }
 
-  await classroom.updateOne(req.body, {
+  classroom = await Classroom.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
     runValidators: true,
   });
@@ -86,7 +87,7 @@ exports.updateClassroom = asyncHandler(async (req, res, next) => {
 // @route   DELETE /api/v1/classroom/:id
 // @access  Private/Admin
 exports.deleteClassroom = asyncHandler(async (req, res, next) => {
-  const classroom = await Classroom.findByIdAndDelete(req.params.id);
+  const classroom = await Classroom.findById(req.params.id);
 
   // correctly formatted id but not found
   if (!classroom) {
@@ -95,11 +96,17 @@ exports.deleteClassroom = asyncHandler(async (req, res, next) => {
     );
   }
 
+  classroom.remove();
+
   res.status(200).json({ success: true, data: {} });
 });
 
 // Helpers
 const validateTeacher = async (next, id) => {
+  if (!id) {
+    throw next(new ErrorResponse(400, 'Please add a teacher'));
+  }
+
   // Checking if teacher exist and have 'teacher' role
   const teacher = await User.findById(id);
   if (!teacher) {
@@ -114,17 +121,18 @@ const validateTeacher = async (next, id) => {
   }
 };
 
-const validateCapacity = async (
-  next,
-  newCapacity,
-  studentsCount,
-  oldCapacity
-) => {
+const validateCapacity = (next, newCapacity, studentsCount, oldCapacity) => {
   // Checking if classroom capacity is ok
-  const capacity = newCapacity || oldCapacity || Classroom.getDefaultCapacity();
-  if (studentsCount > capacity) {
+  let capacity = newCapacity || oldCapacity || Classroom.getDefaultCapacity();
+  if (newCapacity === 0) {
+    capacity = 0;
+  }
+  if (studentsCount > capacity || newCapacity < studentsCount) {
     throw next(
-      new ErrorResponse(400, `Limit of ${capacity} students. (capacity)`)
+      new ErrorResponse(
+        400,
+        `Capacity of ${capacity} is less then students count of ${studentsCount}`
+      )
     );
   }
 };
@@ -168,6 +176,9 @@ const validateStudents = async (next, students, course) => {
 };
 
 const validateCourse = async (next, id) => {
+  if (!id) {
+    throw next(new ErrorResponse(400, 'Please add a course'));
+  }
   // Checking if course exists
   const course = await Course.findById(id);
   if (!course) {

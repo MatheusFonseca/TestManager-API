@@ -27,7 +27,9 @@ const CourseSchema = new mongoose.Schema({
 // Cascade delete classroom when course is deleted
 CourseSchema.pre('remove', async function (next) {
   console.log(`Removing classrooms of course: ${this._id}`);
+  console.log(`Removing questions of course: ${this._id}`);
   await this.model('Classroom').deleteMany({ course: this._id });
+  await this.model('Question').deleteMany({ course: this._id });
   next();
 });
 
