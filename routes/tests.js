@@ -11,6 +11,7 @@ const {
   createTest,
   updateTest,
   deleteTest,
+  submitTest,
 } = require('../controllers/tests.js');
 
 router
@@ -28,5 +29,9 @@ router
   .get(protect, authorize('admin', 'teacher'), getTest)
   .put(protect, authorize('admin', 'teacher'), updateTest)
   .delete(protect, authorize('admin', 'teacher'), deleteTest);
+
+router
+  .route('/submittest/:id')
+  .put(protect, authorize('admin', 'student'), submitTest);
 
 module.exports = router;

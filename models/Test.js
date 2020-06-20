@@ -1,8 +1,35 @@
 const mongoose = require('mongoose');
 
-const questionsValidator = (v) => {
+const notEmpty = (v) => {
   return v.length > 0;
 };
+
+const questionTest = new mongoose.Schema(
+  {
+    question: {
+      type: mongoose.Schema.ObjectId,
+      ref: 'Question',
+      required: [true, 'Please add a question'],
+    },
+    chosenAnswer: {
+      type: mongoose.Schema.ObjectId,
+      required: [true, 'Please add an answer'],
+    },
+  },
+  { _id: false }
+);
+
+const studentTest = new mongoose.Schema({
+  student: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'User',
+    required: [true, 'Please add a student'],
+  },
+  questions: {
+    type: [questionTest],
+    validate: { validator: notEmpty, message: 'Please add questions' },
+  },
+});
 
 const TestSchema = new mongoose.Schema({
   title: {
@@ -21,18 +48,7 @@ const TestSchema = new mongoose.Schema({
       ref: 'Question',
     },
   ],
-  students: [
-    {
-      type: mongoose.Schema.ObjectId,
-      ref: 'User',
-      grade: {
-        type: Number,
-        min: 0,
-        max: 10,
-        required: [true, 'Please add a grade between 0 and 10'],
-      },
-    },
-  ],
+  students: [studentTest],
   createdAt: {
     type: Date,
     default: Date.now,
@@ -43,6 +59,8 @@ TestSchema.path('questions').validate(
   (v) => v.length > 0,
   'A test must have at least one question'
 );
+
+TestSchema.path('students').validate((v) => {});
 
 // Test with different titles for a classroom
 TestSchema.index({ title: 1, classroom: 1 }, { unique: true });
