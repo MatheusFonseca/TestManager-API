@@ -9,7 +9,6 @@ const errorHandler = (err, req, res, next) => {
 
   if (err.name === 'CastError') {
     // Not correctly formatted id
-    console.log(error);
     if (err.message.startsWith('Cast to ObjectId failed'))
       error = new ErrorResponse(400, `Not corretly formatted id: ${err.value}`);
     else

@@ -22,14 +22,13 @@ router
       { path: 'course', select: 'name' },
     ]),
     protect,
-    authorize('admin'),
     getClassrooms
   )
   .post(protect, authorize('admin'), addClassroom);
 
 router
   .route('/:id')
-  .get(protect, authorize('admin'), getClassroom)
+  .get(protect, getClassroom)
   .put(protect, authorize('admin'), updateClassroom)
   .delete(protect, authorize('admin'), deleteClassroom);
 

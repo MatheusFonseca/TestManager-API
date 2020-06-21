@@ -26,7 +26,7 @@ router
 
 router
   .route('/:id')
-  .get(protect, authorize('admin', 'teacher'), getTest)
+  .get(protect, getTest)
   .put(protect, authorize('admin', 'teacher'), updateTest)
   .delete(protect, authorize('admin', 'teacher'), deleteTest);
 

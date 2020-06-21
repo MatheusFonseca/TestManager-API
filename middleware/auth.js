@@ -12,6 +12,9 @@ exports.protect = asyncHandler(async (req, res, next) => {
     req.headers.authorization.startsWith('Bearer')
   ) {
     token = req.headers.authorization.split(' ')[1];
+    // Comment 'else' if not want allow token from cookie
+  } else if (req.cookies.TestManagerToken) {
+    token = req.cookies.TestManagerToken;
   }
 
   // Make sure token exists

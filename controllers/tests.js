@@ -16,7 +16,17 @@ exports.getTests = asyncHandler(async (req, res, next) => {
 // @route   GET /api/v1/tests/:id
 // @access  Private
 exports.getTest = asyncHandler(async (req, res, next) => {
-  const test = await Test.findOne({ _id: req.params.id }).populate('questions');
+  let test;
+  if (req.user.role === 'student') {
+    test = await Test.findOne({ _id: req.params.id }, { students: 0 }).populate(
+      {
+        path: 'questions',
+        select: '-answers.correct',
+      }
+    );
+  } else {
+    test = await Test.findOne({ _id: req.params.id }).populate('questions');
+  }
 
   if (!test) {
     return next(
